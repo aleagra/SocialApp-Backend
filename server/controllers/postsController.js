@@ -22,8 +22,12 @@ const getAllPosts = async (req, resp) => {
 
 const getPost = async (req, res) => {
   try {
-    const user = await User.findOne({ username: req.params.username });
-    const posts = await Post.find({ userId: user._id });
+    const posts = await Post.aggregate([
+      { $match: { userId: mongoose.Types.ObjectId(req.params.userId) } },
+      { $lookup: { from: "users", localField: "userId", foreignField: "_id", as: "user" } },
+      { $unwind: "$user" },
+      { $project: { _id: 1, title: 1, content: 1, user: { fullName: 1 } } }
+    ]);
     res.status(200).json(posts);
   } catch (err) {
     res.status(500).json(err);
@@ -35,9 +39,13 @@ const friendPost = async (req, res) => {
   try {
     const user = await User.findById(userId);
     const followedUserIds = user.following;
-    const followedUserPosts = await Post.find({ userId: { $in: followedUserIds } });
-    const userPosts = await Post.find({ userId });
-    const posts = followedUserPosts.concat(userPosts);
+
+    const posts = await Post.aggregate([
+      { $match: { $or: [{ userId: { $in: followedUserIds } }, { userId: mongoose.Types.ObjectId(userId) }] } },
+      { $lookup: { from: "users", localField: "userId", foreignField: "_id", as: "user" } },
+      { $unwind: "$user" },
+      { $project: { _id: 1, title: 1, content: 1, user: { fullName: 1 } } }
+    ]);
 
     res.json(posts);
   } catch (err) {
@@ -153,12 +161,15 @@ const getLikes = async (req, res) => {
 }
 
 const comentPost = async (req, res) => {
-  const post = await Post.findById(req.params.id);
-  // console.log(req.body);
   try {
+    const post = await Post.findById(req.params.id);
+
     if (post) {
-      await post.updateOne({ $push: { comments: req.body } });
-      res.status(200);
+      post.comments.push(req.body);
+      await post.save();
+      res.status(200).json(post);
+    } else {
+      res.status(404).json({ message: "Post not found" });
     }
   } catch (err) {
     res.status(500).json(err);
