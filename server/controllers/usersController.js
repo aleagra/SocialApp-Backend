@@ -6,13 +6,12 @@ const getIO = require("../server");
 module.exports.login = async (req, res, next) => {
   try {
     const { username, password } = req.body;
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ username }).select("-password");
     if (!user)
       return res.json({ msg: "Incorrect Username or Password", status: false });
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid)
       return res.json({ msg: "Incorrect Username or Password", status: false });
-    delete user.password;
     return res.json({ status: true, user });
   } catch (ex) {
     next(ex);
@@ -21,11 +20,11 @@ module.exports.login = async (req, res, next) => {
 
 module.exports.register = async (req, res, next) => {
   try {
-    const { username, email, password, avatarImage,fullName } = req.body;
-    const usernameCheck = await User.findOne({ username });
+    const { username, email, password, avatarImage, fullName } = req.body;
+    const usernameCheck = await User.exists({ username });
     if (usernameCheck)
       return res.json({ msg: "Username already used", status: false });
-    const emailCheck = await User.findOne({ email });
+    const emailCheck = await User.exists({ email });
     if (emailCheck)
       return res.json({ msg: "Email already used", status: false });
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -35,7 +34,6 @@ module.exports.register = async (req, res, next) => {
       fullName,
       password: hashedPassword,
     });
-    delete user.password;
     return res.json({ status: true, user });
   } catch (ex) {
     next(ex);
@@ -44,7 +42,7 @@ module.exports.register = async (req, res, next) => {
 
 module.exports.getFollowers = async (req, res, next) => {
   try {
-    const user = await User.findById(req.params.id).populate("follower", ["email", "username", "avatarImage", "_id","fullName"]);
+    const user = await User.findById(req.params.id).populate("follower", ["email", "username", "avatarImage", "_id", "fullName"]);
     return res.json(user.following);
   } catch (ex) {
     next(ex);
@@ -53,27 +51,19 @@ module.exports.getFollowers = async (req, res, next) => {
 
 module.exports.getAllUsers = async (req, res, next) => {
   try {
-    const excludedUserId = req.body.id; 
-
-    const users = await User.find({ _id: { $ne: excludedUserId } }).select([
-      "email",
-      "username",
-      "avatarImage",
-      "fullName",
-      "_id",
-    ]);
+    const excludedUserId = req.body.id;
+    const users = await User.find({ _id: { $ne: excludedUserId } }).select({ email: 1, username: 1, avatarImage: 1, fullName: 1, _id: 1 });
     return res.json(users);
   } catch (ex) {
     next(ex);
   }
 };
+
 module.exports.getNotFollowingUsers = async (req, res, next) => {
   try {
     const followingUsers = await User.findById(req.params.id).select("following");
-    const notFollowingUsers = await User.find({
-      _id: { $ne: req.params.id, $nin: followingUsers.following },
-    }).select(["email", "username", "avatarImage", "_id","fullName"]);
-
+    const notFollowingUsers = await User.find({ _id: { $ne: req.params.id, $nin: followingUsers.following } })
+      .select({ email: 1, username: 1, avatarImage: 1, _id: 1, fullName: 1 });
     return res.json(notFollowingUsers);
   } catch (ex) {
     next(ex);
@@ -112,24 +102,28 @@ module.exports.logOut = (req, res, next) => {
 };
 
 module.exports.getUsers = async (req, res) => {
-  const user = await User.find();
-  res.json(user);
+  const users = await User.find().select("-password");
+  res.json(users);
 };
 
 module.exports.findByUser = async (req, res) => {
   const { id } = req.params;
-  User.findById(id)
-    .then((data) => {
-      res.json(data);
-    })
-    .catch(() => {
+  try {
+    const user = await User.findById(id).select("-password");
+    if (user) {
+      res.json(user);
+    } else {
       res.json({ message: "Id no encontrado" });
-    });
+    }
+  } catch (error) {
+    res.json({ message: "Error al buscar usuario" });
+  }
 };
+
 module.exports.findUser = async (req, res) => {
   const { username } = req.params;
   try {
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ username }).select("-password");
     if (user) {
       res.json(user);
     } else {
@@ -139,27 +133,25 @@ module.exports.findUser = async (req, res) => {
     res.json({ message: "Error al buscar usuario" });
   }
 };
+
 module.exports.findByFollowers = async (req, res) => {
   const { id } = req.params;
-  User.findById(id)
-    .then((data) => {
-      res.json(data.followers);
-    })
-    .catch(() => {
-      res.json({ message: "Id no encontrado" });
-    });
+  try {
+    const user = await User.findById(id).select("followers");
+    res.json(user.followers);
+  } catch (error) {
+    res.json({ message: "Id no encontrado" });
+  }
 };
-
 
 module.exports.findByFollowing = async (req, res) => {
   const { id } = req.params;
-  User.findById(id)
-    .then((data) => {
-      res.json(data.following);
-    })
-    .catch(() => {
-      res.json({ message: "Id no encontrado" });
-    });
+  try {
+    const user = await User.findById(id).select("following");
+    res.json(user.following);
+  } catch (error) {
+    res.json({ message: "Id no encontrado" });
+  }
 };
 
 module.exports.likePost = async (req, res) => {
@@ -178,25 +170,21 @@ module.exports.likePost = async (req, res) => {
   }
 };
 
-// Follow a user
 module.exports.FollowUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     const follower = await User.findById(req.body.follower);
 
     if (user && follower) {
-      // Verificar si el seguidor ya está en la lista de following
       if (!user.following.includes(req.body.follower)) {
         user.following.push(req.body.follower);
-        follower.followers.push(req.params.id); // Agregar a la lista de followers del seguidor
+        follower.followers.push(req.params.id);
 
-        await user.save();
-        await follower.save();
+        await Promise.all([user.save(), follower.save()]);
 
-        // Emitir evento de seguimiento a todos los clientes conectados
         req.app.get("io").emit("follower-count-updated", {
           userId: req.params.id,
-          followerCount: user.following.length, // Actualizar el contador de seguidos
+          followerCount: user.following.length,
         });
 
         res.send({ message: "Followed successfully" });
@@ -210,7 +198,7 @@ module.exports.FollowUser = async (req, res) => {
     res.status(500).send({ error: error.message });
   }
 };
-// Unfollow a user
+
 module.exports.UnfollowUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -229,9 +217,7 @@ module.exports.UnfollowUser = async (req, res) => {
 
 module.exports.updateUser = async (req, res) => {
   const { id } = req.params;
-  let modelData = {
-    fullName:req.body.fullName, 
-  };
+  const modelData = { fullName: req.body.fullName };
   await User.updateOne({ _id: id }, modelData);
   res.json({ message: "Usuario Modificado" });
 };
