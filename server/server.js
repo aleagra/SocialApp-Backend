@@ -7,7 +7,7 @@ const messageRoutes = require("./routes/messages");
 const postRoutes = require("./routes/posts.route");
 const User = require("./models/users.models");
 const app = express();
-const socket = require("socket.io");
+const socketIO = require("socket.io");
 const multer = require("multer");
 const path = require("path");
 
@@ -43,7 +43,7 @@ mongoose
 const server = app.listen(process.env.PORT, () =>
   console.log(`Server started on ${process.env.PORT}`)
 )
-const io = socket(server, {
+const io = socketIO(server, {
   cors: {
     origin: "https://social-application.web.app",
     credentials: true,
