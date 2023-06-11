@@ -1,18 +1,27 @@
-require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const socket = require("socket.io");
+const multer = require("multer");
+const path = require("path");
+
 const authRoutes = require("./routes/auth");
 const messageRoutes = require("./routes/messages");
 const postRoutes = require("./routes/posts.route");
 const User = require("./models/users.models");
+
 const app = express();
-const socket = require("socket.io");
-const multer = require("multer");
-const path = require("path");
-app.use(cors({
-  origin: 'https://social-application.web.app',
-}));
+const server = app.listen(process.env.PORT, () => {
+  console.log(`Server started on ${process.env.PORT}`);
+});
+
+const io = socket(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    credentials: true,
+  },
+});
+
 mongoose
   .connect(process.env.MONGO_URL, {
     useNewUrlParser: true,
@@ -22,8 +31,13 @@ mongoose
     console.log("DB Connection Successful");
   })
   .catch((err) => {
-    console.log(err.message);
+    console.error("DB Connection Error:", err);
+    process.exit(1);
   });
+
+app.use(cors({
+  origin: 'https://social-application.web.app',
+}));
 
 app.use(express.json());
 app.use(express.static(__dirname));
@@ -32,21 +46,13 @@ app.use("/messages", messageRoutes);
 app.use(postRoutes);
 app.use("/images", express.static(path.join(__dirname, "public/images")));
 
-const server = app.listen(process.env.PORT, () =>
-  console.log(`Server started on ${process.env.PORT}`)
-);
-const io = socket(server, {
-  cors: {
-    origin: "http://localhost:5173",
-    credentials: true,
-  },
-});
 mongoose.set("strictPopulate", false);
 global.onlineUsers = new Map();
 app.set("io", io);
 
 io.on("connection", (socket) => {
   global.chatSocket = socket;
+
   socket.on("add-user", (userId) => {
     onlineUsers.set(userId, socket.id);
   });
@@ -58,50 +64,49 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Define la lógica para tu función FollowUser aquí mismo
   socket.on("follow-user", async (data) => {
-  const user = await User.findById(data.userId);
-  const follower = await User.findById(data.followerId);
+    const user = await User.findById(data.userId);
+    const follower = await User.findById(data.followerId);
 
-  if (user && follower) {
-    if (!user.following.includes(data.followerId)) {
-      user.following.push(data.followerId);
-      follower.followers.push(data.userId);
+    if (user && follower) {
+      if (!user.following.includes(data.followerId)) {
+        user.following.push(data.followerId);
+        follower.followers.push(data.userId);
 
-      await user.save();
-      await follower.save();
+        await user.save();
+        await follower.save();
 
-      io.emit("follower-count-updated", {
-        userId: data.userId,
-        followerCount: user.following.length,
-      });
+        io.emit("follower-count-updated", {
+          userId: data.userId,
+          followerCount: user.following.length,
+        });
+      }
+    } else {
+      console.log("No se encontraron los documentos de usuario");
     }
-  } else {
-    console.log("No se encontraron los documentos de usuario");
-  }
-});
-socket.on("unfollow-user", async (data) => {
-  const user = await User.findById(data.userId);
-  const follower = await User.findById(data.followerId);
+  });
 
-  if (user && follower) {
-    if (user.following.includes(data.followerId)) {
-      user.following.pull(data.followerId);
-      follower.followers.pull(data.userId);
+  socket.on("unfollow-user", async (data) => {
+    const user = await User.findById(data.userId);
+    const follower = await User.findById(data.followerId);
 
-      await user.save();
-      await follower.save();
+    if (user && follower) {
+      if (user.following.includes(data.followerId)) {
+        user.following.pull(data.followerId);
+        follower.followers.pull(data.userId);
 
-      io.emit("follower-count-updated", {
-        userId: data.userId,
-        followerCount: user.following.length,
-      });
+        await user.save();
+        await follower.save();
+
+        io.emit("follower-count-updated", {
+          userId: data.userId,
+          followerCount: user.following.length,
+        });
+      }
+    } else {
+      console.log("No se encontraron los documentos de usuario");
     }
-  } else {
-    console.log("No se encontraron los documentos de usuario");
-  }
-});
-
+  });
 });
 
 const storage = multer.diskStorage({
@@ -114,6 +119,7 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage: storage });
+
 app.post("/upload", upload.single("file"), (req, res) => {
   try {
     return res.status(200).json("Archivo subido correctamente");
