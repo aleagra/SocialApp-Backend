@@ -10,9 +10,26 @@ const app = express();
 const socket = require("socket.io");
 const multer = require("multer");
 const path = require("path");
+
+app.use(express.json());
+app.use(express.static(__dirname));
+
 app.use(cors({
   origin: 'https://social-application.web.app',
 }));
+
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', 'https://social-application.web.app');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+});
+
+app.use("/users", authRoutes);
+app.use("/messages", messageRoutes);
+app.use(postRoutes);
+app.use("/images", express.static(path.join(__dirname, "public/images")));
+
 mongoose
   .connect(process.env.MONGO_URL, {
     useNewUrlParser: true,
@@ -25,16 +42,9 @@ mongoose
     console.log(err.message);
   });
 
-app.use(express.json());
-app.use(express.static(__dirname));
-app.use("/users", authRoutes);
-app.use("/messages", messageRoutes);
-app.use(postRoutes);
-app.use("/images", express.static(path.join(__dirname, "public/images")));
-
 const server = app.listen(process.env.PORT, () =>
   console.log(`Server started on ${process.env.PORT}`)
-);
+)
 const io = socket(server, {
   cors: {
     origin: "http://localhost:5173",
