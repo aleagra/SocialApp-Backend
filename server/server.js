@@ -10,14 +10,9 @@ const app = express();
 const socket = require("socket.io");
 const multer = require("multer");
 const path = require("path");
-const corsOptions = {
-  origin: "https://social-application.web.app",
-  credentials: true,
-  methods: "GET, POST, PUT, DELETE",
-  allowedHeaders: "Content-Type, Authorization",
-};
-
-app.use(cors(corsOptions));
+app.use(cors({
+  origin: 'https://social-application.web.app',
+}));
 mongoose
   .connect(process.env.MONGO_URL, {
     useNewUrlParser: true,
