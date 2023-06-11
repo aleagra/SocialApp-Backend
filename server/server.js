@@ -15,7 +15,7 @@ app.use(express.json());
 app.use(express.static(__dirname));
 
 app.use(cors({
-  origin:'https://social-application.web.app',
+  origin: 'https://social-application.web.app',
 }));
 
 app.use((req, res, next) => {
