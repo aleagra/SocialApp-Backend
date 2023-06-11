@@ -22,12 +22,8 @@ const getAllPosts = async (req, resp) => {
 
 const getPost = async (req, res) => {
   try {
-    const posts = await Post.aggregate([
-      { $match: { userId: mongoose.Types.ObjectId(req.params.userId) } },
-      { $lookup: { from: "users", localField: "userId", foreignField: "_id", as: "user" } },
-      { $unwind: "$user" },
-      { $project: { _id: 1, title: 1, content: 1, user: { fullName: 1 } } }
-    ]);
+    const user = await User.findOne({ username: req.params.username });
+    const posts = await Post.find({ userId: user._id });
     res.status(200).json(posts);
   } catch (err) {
     res.status(500).json(err);
