@@ -28,6 +28,7 @@ const serviceAccountKeyPath = path.resolve(__dirname, "./storage/storage.json");
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccountKeyPath),
   storageBucket: 'socialapp-storage-94b01.appspot.com'
+
 });
 
 const bucket = admin.storage().bucket();
