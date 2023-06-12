@@ -22,8 +22,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
   try {
     const file = req.file;
     const downloadURL = await uploadFileToFirebaseStorage(file);
-
-    // Aquí puedes guardar la URL de descarga en la base de datos o realizar otras operaciones necesarias
+    console.log(downloadURL)
 
     return res.status(200).json("Archivo subido correctamente");
   } catch (error) {
@@ -45,19 +44,13 @@ const uploadFileToFirebaseStorage = async (file) => {
     });
 
     const bucket = admin.storage().bucket();
-
     const fileName = new Date().getTime() + file.originalname;
-    const fileRef = bucket.file(fileName);
-    const fileStream = fileRef.createWriteStream({
+
+    await bucket.upload(file.path, {
+      destination: fileName,
       metadata: {
         contentType: file.mimetype,
       },
-    });
-
-    await new Promise((resolve, reject) => {
-      fileStream.on("error", (error) => reject(error));
-      fileStream.on("finish", () => resolve());
-      fileStream.end(file.buffer);
     });
 
     const downloadURL = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
@@ -66,7 +59,6 @@ const uploadFileToFirebaseStorage = async (file) => {
     throw error;
   }
 }
-
 // Resto del código...
 
 app.listen(process.env.PORT, () => {
