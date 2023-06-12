@@ -24,7 +24,7 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   next();
 });
-const serviceAccountKeyPath = path.resolve(__dirname, "./storage/storage.json");
+const serviceAccountKeyPath = path.join(__dirname, "storage/storage.json");
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccountKeyPath),
   storageBucket: 'socialapp-storage-94b01.appspot.com'
