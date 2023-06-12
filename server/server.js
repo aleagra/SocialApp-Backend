@@ -156,3 +156,17 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     res.status(500).json('Error al subir el archivo');
   }
 });
+app.get("/images/:filename", (req, res) => {
+  const filename = req.params.filename;
+  const file = bucket.file(filename);
+
+  const stream = file.createReadStream();
+  stream.on("error", (error) => {
+    console.error(error);
+    res.status(404).send("No se pudo encontrar la imagen");
+  });
+
+  res.setHeader("Content-Type", "image/jpeg"); // o el tipo de contenido correspondiente a tus imágenes
+
+  stream.pipe(res);
+});
