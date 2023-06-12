@@ -9,6 +9,8 @@ const User = require("./models/users.models");
 const app = express();
 const socketIO = require("socket.io");
 const multer = require("multer");
+const multerGoogleStorage = require('multer-google-storage');
+const admin = require('firebase-admin');
 const path = require("path");
 
 app.use(express.json());
@@ -23,6 +25,12 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   next();
 });
+admin.initializeApp({
+  credential: admin.credential.applicationDefault(),
+  storageBucket: 'social-app-751c3.appspot.com'
+});
+const storage = admin.storage();
+
 app.use("/users", authRoutes);
 app.use("/messages", messageRoutes);
 app.use(postRoutes);
@@ -66,7 +74,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Define la lógica para tu función FollowUser aquí mismo
+
   socket.on("follow-user", async (data) => {
   const user = await User.findById(data.userId);
   const follower = await User.findById(data.followerId);
@@ -112,19 +120,19 @@ socket.on("unfollow-user", async (data) => {
 
 });
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public/images");
-  },
-  filename: (req, file, cb) => {
-    cb(null, req.body.name);
-  },
+const upload = multer({
+  storage: multerGoogleStorage.storageEngine({
+    bucket: 'social-app-751c3.appspot.com',
+    projectId: 'social-app-751c3',
+    filename: (req, file, cb) => {
+      cb(null, file.originalname);
+    }
+  })
 });
 
-const upload = multer({ storage: storage });
-app.post("/upload", upload.single("file"), (req, res) => {
+app.post('/upload', upload.single('file'), (req, res) => {
   try {
-    return res.status(200).json("Archivo subido correctamente");
+    return res.status(200).json('Archivo subido correctamente');
   } catch (error) {
     console.error(error);
   }
