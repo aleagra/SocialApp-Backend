@@ -9,27 +9,28 @@ const User = require("./models/users.models");
 const app = express();
 const socketIO = require("socket.io");
 const multer = require("multer");
-const multerGoogleStorage = require('multer-google-storage');
-const admin = require('firebase-admin');
+const MulterGoogleStorage = require("multer-google-storage");
 const path = require("path");
 
+app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
-
-app.use(cors({
-  origin: 'https://social-application.web.app',
-}));
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   next();
 });
-admin.initializeApp({
-  credential: admin.credential.applicationDefault(),
-  storageBucket: 'social-app-751c3.appspot.com'
+
+const bucketName = 'socialapp-storage-94b01.appspot.com';
+console.log('Bucket:', bucketName);
+
+const storage = MulterGoogleStorage.storageEngine({
+  projectId: 'socialapp-storage-94b01',
+  keyFilename: 'storage.json',
+  bucket: bucketName,
 });
-const storage = admin.storage();
+const upload = multer({ storage: storage });
 
 app.use("/users", authRoutes);
 app.use("/messages", messageRoutes);
@@ -53,7 +54,7 @@ const server = app.listen(process.env.PORT, () =>
 )
 const io = socketIO(server, {
   cors: {
-    origin: "https://social-application.web.app",
+    origin: "https://social-application.web.app", // Reemplaza con el dominio de tu frontend
     credentials: true,
   },
 });
@@ -74,60 +75,49 @@ io.on("connection", (socket) => {
     }
   });
 
-
   socket.on("follow-user", async (data) => {
-  const user = await User.findById(data.userId);
-  const follower = await User.findById(data.followerId);
+    const user = await User.findById(data.userId);
+    const follower = await User.findById(data.followerId);
 
-  if (user && follower) {
-    if (!user.following.includes(data.followerId)) {
-      user.following.push(data.followerId);
-      follower.followers.push(data.userId);
+    if (user && follower) {
+      if (!user.following.includes(data.followerId)) {
+        user.following.push(data.followerId);
+        follower.followers.push(data.userId);
 
-      await user.save();
-      await follower.save();
+        await user.save();
+        await follower.save();
 
-      io.emit("follower-count-updated", {
-        userId: data.userId,
-        followerCount: user.following.length,
-      });
+        io.emit("follower-count-updated", {
+          userId: data.userId,
+          followerCount: user.following.length,
+        });
+      }
+    } else {
+      console.log("No se encontraron los documentos de usuario");
     }
-  } else {
-    console.log("No se encontraron los documentos de usuario");
-  }
-});
-socket.on("unfollow-user", async (data) => {
-  const user = await User.findById(data.userId);
-  const follower = await User.findById(data.followerId);
+  });
 
-  if (user && follower) {
-    if (user.following.includes(data.followerId)) {
-      user.following.pull(data.followerId);
-      follower.followers.pull(data.userId);
+  socket.on("unfollow-user", async (data) => {
+    const user = await User.findById(data.userId);
+    const follower = await User.findById(data.followerId);
 
-      await user.save();
-      await follower.save();
+    if (user && follower) {
+      if (user.following.includes(data.followerId)) {
+        user.following.pull(data.followerId);
+        follower.followers.pull(data.userId);
 
-      io.emit("follower-count-updated", {
-        userId: data.userId,
-        followerCount: user.following.length,
-      });
+        await user.save();
+        await follower.save();
+
+        io.emit("follower-count-updated", {
+          userId: data.userId,
+          followerCount: user.following.length,
+        });
+      }
+    } else {
+      console.log("No se encontraron los documentos de usuario");
     }
-  } else {
-    console.log("No se encontraron los documentos de usuario");
-  }
-});
-
-});
-
-const upload = multer({
-  storage: multerGoogleStorage.storageEngine({
-    bucket: 'social-app-751c3.appspot.com',
-    projectId: 'social-app-751c3',
-    filename: (req, file, cb) => {
-      cb(null, file.originalname);
-    }
-  })
+  });
 });
 
 app.post('/upload', upload.single('file'), (req, res) => {
@@ -135,5 +125,6 @@ app.post('/upload', upload.single('file'), (req, res) => {
     return res.status(200).json('Archivo subido correctamente');
   } catch (error) {
     console.error(error);
+    return res.status(500).json('Error al subir el archivo');
   }
 });
