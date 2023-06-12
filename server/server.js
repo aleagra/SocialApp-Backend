@@ -41,7 +41,7 @@ const uploadFileToFirebaseStorage = async (file) => {
     // Inicializar la aplicación de administración de Firebase
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
-      storageBucket: "//socialapp-storage-94b01.appspot.com",
+      storageBucket: "socialapp-storage-94b01.appspot.com",
     });
 
     const bucket = admin.storage().bucket();
