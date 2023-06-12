@@ -132,7 +132,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
       return res.status(400).json('No se ha seleccionado ningún archivo');
     }
     
-    const fileName = file.originalname;  // Conserva el nombre original del archivo
+    const fileName = req.body.name; // Utilizar el mismo nombre de archivo recibido del front-end
     const fileRef = bucket.file(fileName);
     const fileStream = fileRef.createWriteStream({
       metadata: {
