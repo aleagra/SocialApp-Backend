@@ -2,6 +2,7 @@ const cache = require('memory-cache');
 
 const cacheMiddleware = (req, res, next) => {
   const key = '__express__' + req.originalUrl || req.url;
+  console.log('URL de la solicitud:', req.originalUrl);
   const cachedResponse = cache.get(key);
 
   if (cachedResponse) {
