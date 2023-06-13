@@ -97,7 +97,7 @@ io.on("connection", (socket) => {
     );
 
     if (user && follower) {
-      io.emit("follower-count-updated", {
+    socket.to(user).emit("follower-count-updated", {
         userId: data.userId,
         followerCount: user.following.length,
       });
