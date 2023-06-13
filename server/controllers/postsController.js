@@ -132,14 +132,14 @@ const checkLike = async (req, res) => {
     const hasLiked = post.likes.includes(userId);
     res.json(hasLiked);
   } catch (err) {
-    // Manejar el error
+
   }
 }
 
 const getLikes = async (req, res) => {
   try {
     const { id } = req.params;
-    const post = await Post.findById(id).populate('likes', 'name'); // Suponiendo que el campo de likes en el modelo Post está referenciado a los usuarios que han dado like y tiene un campo 'name' para el nombre del usuario.
+    const post = await Post.findById(id).populate('likes', 'name'); 
 
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
