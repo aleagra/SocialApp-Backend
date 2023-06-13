@@ -1,4 +1,5 @@
 require("dotenv").config();
+const cacheMiddleware = require("./middlewares/validateRequest")
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
@@ -11,7 +12,7 @@ const authRoutes = require("./routes/auth");
 const messageRoutes = require("./routes/messages");
 const postRoutes = require("./routes/posts.route");
 const User = require("./models/users.models");
-const cacheMiddleware = require("./middlewares/validateRequest")
+const cache = require("memory-cache");
 const app = express();
 const server = app.listen(process.env.PORT, () => {
   console.log(`Server started on ${process.env.PORT}`);
