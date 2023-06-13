@@ -43,28 +43,29 @@ mongoose.connect(process.env.MONGO_URL, {
   .catch((err) => {
     console.log(err.message);
   });
-app.use(cacheMiddleware);
-app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, "public")));
-app.use(cors({
-  origin: "https://social-application.web.app",
-}));
+  app.use(cacheMiddleware); // Aplicar el middleware de caché aquí
 
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "https://social-application.web.app");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  next();
-});
-
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
-
-app.use("/users", authRoutes);
-app.use("/messages", messageRoutes);
-app.use(postRoutes);
-app.use("/images", express.static(path.join(__dirname, "public/images")));
+  app.use(bodyParser.json());
+  app.use(express.static(path.join(__dirname, "public")));
+  app.use(cors({
+    origin: "https://social-application.web.app",
+  }));
+  
+  app.use((req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "https://social-application.web.app");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    next();
+  });
+  
+  const storage = multer.memoryStorage();
+  const upload = multer({ storage });
+  
+  app.use("/users", authRoutes);
+  app.use("/messages", messageRoutes);
+  app.use(postRoutes);
+  app.use("/images", express.static(path.join(__dirname, "public/images")));
 
 
 global.onlineUsers = new Map();
