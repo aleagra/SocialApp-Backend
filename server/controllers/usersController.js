@@ -173,8 +173,10 @@ module.exports.likePost = async (req, res) => {
 
 module.exports.FollowUser = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
-    const follower = await User.findById(req.body.follower);
+    const [user, follower] = await Promise.all([
+      User.findById(req.params.id),
+      User.findById(req.body.follower),
+    ]);
 
     if (user && follower) {
       if (!user.following.includes(req.body.follower)) {
