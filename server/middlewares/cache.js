@@ -5,6 +5,7 @@ const cacheMiddleware = (req, res, next) => {
   const cachedResponse = cache.get(key);
 
   if (cachedResponse) {
+    console.log('Respuesta obtenida desde la caché:', key);
     res.send(cachedResponse);
     return;
   }
