@@ -7,12 +7,11 @@ const admin = require("firebase-admin");
 const path = require("path");
 const socketIO = require("socket.io");
 const bodyParser = require("body-parser");
-
 const authRoutes = require("./routes/auth");
 const messageRoutes = require("./routes/messages");
 const postRoutes = require("./routes/posts.route");
 const User = require("./models/users.models");
-
+const cacheMiddleware = require("./middlewares/validateRequest")
 const app = express();
 const server = app.listen(process.env.PORT, () => {
   console.log(`Server started on ${process.env.PORT}`);
@@ -43,7 +42,7 @@ mongoose.connect(process.env.MONGO_URL, {
   .catch((err) => {
     console.log(err.message);
   });
-
+app.use(cacheMiddleware);
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "public")));
 app.use(cors({
