@@ -13,7 +13,7 @@ const cacheMiddleware = (req, res, next) => {
 
   res.sendResponse = res.send;
   res.send = (body) => {
-    cache.put(key, body);
+    cache.put(key, body, 300000);
     res.sendResponse(body);
   };
 
