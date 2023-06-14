@@ -99,7 +99,7 @@ const updateProfileFullName = async (req, res) => {
 
 const updatePostsAvatarImage = async (userId, newAvatarImage) => {
   try {
-    await Post.update({ userId: userId }, { $set: { "user.$[].avatarImage": newAvatarImage } }, { multi: true });
+    await Post.updateMany({ userId: userId }, { $set: { "user.$[].avatarImage": newAvatarImage } });
     console.log('Se actualizaron todas las publicaciones correctamente.');
   } catch (err) {
     console.error('Error al actualizar las publicaciones:', err);
