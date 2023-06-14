@@ -76,7 +76,7 @@ const getPostsByUserID = async (req, res) => {
 
 const updatePostsFullname = async (userId, newFullname) => {
   try {
-    await Post.update({ userId: userId }, { $set: { "user.$[].fullName": newFullname } }, { multi: true });
+    await Post.updateMany({ userId: userId }, { $set: { "user.$[].fullName": newFullname } });
     console.log('Se actualizaron todas las publicaciones correctamente.');
   } catch (err) {
     console.error('Error al actualizar las publicaciones:', err);
