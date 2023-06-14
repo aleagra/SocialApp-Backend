@@ -120,6 +120,7 @@ const updateProfileAvatarImage = async (req, res) => {
   }
 };
 
+
 const checkLike = async (req, res) => {
   try {
     const { id, userId } = req.params;
