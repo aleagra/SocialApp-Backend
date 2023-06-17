@@ -34,7 +34,7 @@ admin.initializeApp({
 const bucket = admin.storage().bucket();
 
 const storage = multer.memoryStorage();
-const upload = multer({ storage });
+const upload = multer({ storage }).single("file");
 
 app.use("/users", authRoutes);
 app.use("/messages", messageRoutes);
