@@ -1,4 +1,3 @@
-require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
@@ -11,6 +10,7 @@ const socketIO = require("socket.io");
 const multer = require("multer");
 const admin = require('firebase-admin');
 const path = require("path");
+const sharp = require('sharp');
 
 app.use(express.json());
 app.use(express.static(__dirname));
@@ -24,11 +24,11 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   next();
 });
+
 const serviceAccountKeyPath = path.join(__dirname, "storage/storage.json");
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccountKeyPath),
   storageBucket: 'socialapp-storage-94b01.appspot.com'
-
 });
 
 const bucket = admin.storage().bucket();
@@ -134,6 +134,13 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     
     const fileName = req.body.name;
     const fileRef = bucket.file(fileName);
+    
+    // Redimensionar la imagen y comprimir
+    const resizedImageBuffer = await sharp(file.buffer)
+      .resize(800, 800) // Ajusta las dimensiones según tus necesidades
+      .jpeg({ quality: 80 }) // Ajusta el nivel de calidad JPEG según tus necesidades
+      .toBuffer();
+    
     const fileStream = fileRef.createWriteStream({
       metadata: {
         contentType: file.mimetype,
@@ -150,12 +157,13 @@ app.post('/upload', upload.single('file'), async (req, res) => {
       res.status(200).json(downloadURL);
     });
 
-    fileStream.end(file.buffer);
+    fileStream.end(resizedImageBuffer);
   } catch (error) {
     console.error(error);
     res.status(500).json('Error al subir el archivo');
   }
 });
+
 app.get("/images/:filename", (req, res) => {
   const filename = req.params.filename;
   const file = bucket.file(filename);
