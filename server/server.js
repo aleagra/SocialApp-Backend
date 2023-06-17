@@ -11,6 +11,7 @@ const socketIO = require("socket.io");
 const multer = require("multer");
 const admin = require('firebase-admin');
 const path = require("path");
+const sharp = require("sharp");
 
 app.use(express.json());
 app.use(express.static(__dirname));
@@ -134,11 +135,19 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     
     const fileName = req.body.name;
     const fileRef = bucket.file(fileName);
+
+    // Procesamiento de la imagen con sharp
+    const sharpStream = sharp(file.buffer)
+      .resize(800) // Ejemplo: redimensionar la imagen a un ancho de 800 píxeles
+      .toBuffer();
+
     const fileStream = fileRef.createWriteStream({
       metadata: {
         contentType: file.mimetype,
       },
     });
+
+    sharpStream.pipe(fileStream);
 
     fileStream.on("error", (error) => {
       console.error(error);
@@ -149,13 +158,12 @@ app.post('/upload', upload.single('file'), async (req, res) => {
       const downloadURL = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
       res.status(200).json(downloadURL);
     });
-
-    fileStream.end(file.buffer);
   } catch (error) {
     console.error(error);
     res.status(500).json('Error al subir el archivo');
   }
 });
+
 app.get("/images/:filename", (req, res) => {
   const filename = req.params.filename;
   const file = bucket.file(filename);
