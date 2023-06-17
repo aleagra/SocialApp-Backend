@@ -137,8 +137,8 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     
     // Redimensionar la imagen y comprimir
     const resizedImageBuffer = await sharp(file.buffer)
-      .resize(800, 800) // Ajusta las dimensiones según tus necesidades
-      .jpeg({ quality: 80 }) // Ajusta el nivel de calidad JPEG según tus necesidades
+      .resize({ width: 1366, height: 1366, fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 80 })
       .toBuffer();
     
     const fileStream = fileRef.createWriteStream({
