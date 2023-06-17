@@ -136,11 +136,18 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     const fileRef = bucket.file(fileName);
     
     // Redimensionar la imagen y comprimir
-    const resizedImageBuffer = await sharp(file.buffer)
-      .resize({ width: 1024, height: 576, fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 60 })
-      .toBuffer();
-    
+    const image = sharp(file.buffer);
+    const metadata = await image.metadata();
+    const maxWidth = 1366;
+    const maxHeight = 1366;
+
+    let resizedImageBuffer = file.buffer;
+    if (metadata.width > maxWidth || metadata.height > maxHeight) {
+      resizedImageBuffer = await image
+        .resize(maxWidth, maxHeight, { fit: 'inside', withoutEnlargement: true })
+        .toBuffer();
+    }
+
     const fileStream = fileRef.createWriteStream({
       metadata: {
         contentType: file.mimetype,
