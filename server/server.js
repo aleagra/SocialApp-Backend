@@ -24,7 +24,7 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   next();
 });
-const private_key = process.env.SERVICE_ACCOUNT_PRIVATE_KEY.replace(/\\n/g, '\n');
+const private_key = process.env.SERVICE_ACCOUNT_PRIVATE_KEY;
 const serviceAccount = {
   type: process.env.SERVICE_ACCOUNT_TYPE,
   project_id: process.env.SERVICE_ACCOUNT_PROJECT_ID,
