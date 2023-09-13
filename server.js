@@ -11,14 +11,14 @@ const multer = require("multer");
 const admin = require('firebase-admin');
 const path = require("path");
 const sharp = require('sharp');
-
+require('dotenv').config();
 app.use(express.json());
 app.use(express.static(__dirname));
 
 app.use(cors({
-  origin: 'https://social-application.web.app',
+  origin: 'https://socialapp-backend-6ve7-dev.fl0.io', // Permitir solicitudes desde http://localhost:5173
+  credentials: true, // Habilitar las credenciales si es necesario
 }));
-
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -70,9 +70,10 @@ const server = app.listen(process.env.PORT, () =>
 )
 const io = socketIO(server, {
   cors: {
-    origin: "https://social-application.web.app",
-    credentials: true,
-  },
+    origin: "https://socialapp-backend-6ve7-dev.fl0.io", // Permitir conexiones desde http://localhost:5173
+    methods: ["GET", "POST"],
+    credentials: true // Habilitar las credenciales si es necesario
+  }
 });
 mongoose.set("strictPopulate", false);
 global.onlineUsers = new Map();
