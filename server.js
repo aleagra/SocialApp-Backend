@@ -16,8 +16,8 @@ app.use(express.json());
 app.use(express.static(__dirname));
 
 app.use(cors({
-  origin: 'https://socialapp-backend-6ve7-dev.fl0.io', // Permitir solicitudes desde http://localhost:5173
-  credentials: true, // Habilitar las credenciales si es necesario
+  origin: 'https://socialapp-backend-6ve7-dev.fl0.io', 
+  credentials: true,
 }));
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
