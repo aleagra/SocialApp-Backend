@@ -11,7 +11,7 @@ const multer = require("multer");
 const admin = require('firebase-admin');
 const path = require("path");
 const sharp = require('sharp');
-require('dotenv').config();
+
 app.use(express.json());
 app.use(express.static(__dirname));
 
@@ -24,7 +24,6 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   next();
 });
-
 const private_key = process.env.SERVICE_ACCOUNT_PRIVATE_KEY;
 const serviceAccount = {
   type: process.env.SERVICE_ACCOUNT_TYPE,
@@ -148,7 +147,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     const fileName = req.body.name;
     const fileRef = bucket.file(fileName);
     
- 
+    // Redimensionar la imagen y comprimir
     const image = sharp(file.buffer);
     const metadata = await image.metadata();
     const maxWidth = 1366;
