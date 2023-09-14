@@ -199,3 +199,6 @@ app.get("/images/:filename", (req, res) => {
 
   stream.pipe(res);
 });
+app.get('/ping'),(req,res)=>{
+  res.send('hola mundo')
+}
