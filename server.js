@@ -16,7 +16,7 @@ app.use(express.json());
 app.use(express.static(__dirname));
 
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: 'https://social-application.web.app',
   credentials: true,
 }));
 
@@ -71,9 +71,9 @@ const server = app.listen(process.env.PORT, () =>
 )
 const io = socketIO(server, {
   cors: {
-    origin: "http://localhost:5173", // Permitir conexiones desde http://localhost:5173
+    origin: "https://social-application.web.app", 
     methods: ["GET", "POST"],
-    credentials: true // Habilitar las credenciales si es necesario
+    credentials: true 
   }
 });
 mongoose.set("strictPopulate", false);
